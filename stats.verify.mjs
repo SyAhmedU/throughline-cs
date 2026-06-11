@@ -40,6 +40,21 @@ const sm = S.summarize([1, 2, 3, 4].map(x => x + 0)); // sd = 1.2910
 ok('summarize n', sm.n, 4, 0);
 ok('summarize ci half-width', (sm.ci95[1] - sm.ci95[0]) / 2, 3.182 * (S.sd([1, 2, 3, 4]) / 2), 5e-3);
 
+// Holm — hand-worked: p=[.01,.04,.03,.005], m=4
+// sorted [.005,.01,.03,.04] → ×[4,3,2,1] = [.02,.03,.06,.04] → cummax [.02,.03,.06,.06]
+// back to input order: [.03,.06,.06,.02]
+const hm = S.holm([0.01, 0.04, 0.03, 0.005]);
+ok('holm[0]', hm[0], 0.03, 1e-12);
+ok('holm[1]', hm[1], 0.06, 1e-12);
+ok('holm[2]', hm[2], 0.06, 1e-12);
+ok('holm[3]', hm[3], 0.02, 1e-12);
+
+// seedsNeeded — textbook two-sample normal approximation:
+// α=.05 two-sided, power .80 → (1.96+0.8416)² × 2 ≈ 15.70 → sd=1, δ=1 → n=16
+ok('seedsNeeded d=1', S.seedsNeeded({ sd: 1, delta: 1 }), 16, 0);
+// medium effect d=0.5 → ×4 → 63 (2*(2.8016/0.5)^2 = 62.8 → 63)
+ok('seedsNeeded d=0.5', S.seedsNeeded({ sd: 1, delta: 0.5 }), 63, 0);
+
 // bootstrap — deterministic and brackets the mean
 const ci1 = S.bootMeanCI([5, 6, 7, 8, 9, 10], { seed: 7 });
 const ci2 = S.bootMeanCI([5, 6, 7, 8, 9, 10], { seed: 7 });

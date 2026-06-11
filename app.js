@@ -108,8 +108,10 @@ function renderHome() {
         <input type="text" id="np" class="grow" placeholder="Name a new project — e.g. Efficient retrieval for long-context LLMs" maxlength="120">
         <button class="btn btn-fill" id="npGo">Create project</button>
         <button class="btn btn-ghost btn-sm" id="impBtn" title="Import a project JSON exported from this app">⬆ Import</button>
+        <button class="btn btn-ghost btn-sm" id="exBtn" title="A filled-in example project: reading list fetched live from Semantic Scholar (real records); run data simulated and labeled as such">✦ Worked example</button>
       </div>
-      <div id="plist">${ps.length ? '' : '<p class="empty">No projects yet — name one above to start the thread.</p>'}</div>
+      <div class="statline" id="exStat"></div>
+      <div id="plist">${ps.length ? '' : '<p class="empty">No projects yet — name one above to start the thread, or load the worked example.</p>'}</div>
     </section>
     <section style="margin-top:34px">
       <div class="kicker">The thread</div>
@@ -155,6 +157,40 @@ function renderHome() {
   };
   $('#npGo').addEventListener('click', create);
   $('#np').addEventListener('keydown', (e) => { if (e.key === 'Enter') create(); });
+  $('#exBtn').addEventListener('click', async () => {
+    const stat = $('#exStat');
+    const btn = $('#exBtn'); btn.disabled = true;
+    const p = newProject('Worked example — retrieval ablation (simulated data)');
+    // Reading list: fetched LIVE from Semantic Scholar by arXiv id — real
+    // records, verbatim, never hardcoded. Skipped gracefully when rate-limited.
+    const seeds = [
+      { id: 'arXiv:1706.03762', tag: 'architecture' },
+      { id: 'arXiv:2005.11401', tag: 'method' },
+      { id: 'arXiv:1810.04805', tag: 'baseline' },
+    ];
+    for (const [i, s] of seeds.entries()) {
+      stat.textContent = `fetching real paper ${i + 1}/${seeds.length} from Semantic Scholar…`;
+      try { p.discover.papers.push({ ...(await s2Paper(s.id)), tag: s.tag }); } catch {}
+      await new Promise((r) => setTimeout(r, 1100));
+    }
+    p.frame = {
+      problem: '(Illustrative example.) Question-answering systems answer from parametric memory alone and miss facts they were never trained on.',
+      gap: '(Illustrative.) We want to know how much of our system’s accuracy actually comes from the retrieval component, isolated from everything else.',
+      rqs: 'RQ1: Does removing the retrieval component reduce exact-match accuracy?',
+      contributions: '[study] An ablation isolating the retrieval component’s contribution (worked example).',
+      scope: 'This whole project is a worked example. The reading list contains real papers (fetched live from Semantic Scholar); ALL RUN DATA BELOW ARE SIMULATED for demonstration and support no real claim.',
+    };
+    p.design = { paradigm: 'Empirical / benchmark comparison', methods: 'with-retrieval\nno-retrieval', datasets: [{ name: 'demo-qa (simulated)', src: 'user' }], metrics: 'em', seeds: '1, 2, 3, 4', ablations: '− retrieval component (this is the whole study)', threats: { stat: true } };
+    // Simulated demo runs — labeled in name, scope, and per-run notes.
+    const sim = { 'with-retrieval': [0.612, 0.598, 0.604, 0.591], 'no-retrieval': [0.522, 0.515, 0.530, 0.508] };
+    for (const m of Object.keys(sim)) sim[m].forEach((v, i) => p.experiment.runs.push({
+      id: uid(), method: m, dataset: 'demo-qa (simulated)', seed: String(i + 1), params: 'simulated',
+      metrics: { em: v }, status: 'done', notes: 'SIMULATED demo data', ts: new Date().toISOString(),
+    }));
+    saveP(p);
+    stat.textContent = p.discover.papers.length ? '' : 'Semantic Scholar was rate-limited — example created without the reading list; add papers in Discover.';
+    location.hash = `#/p/${p.id}/analyze`;
+  });
   $('#impBtn').addEventListener('click', () => {
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
     inp.onchange = async () => {
@@ -220,18 +256,40 @@ async function searchArxiv(q) {
     };
   });
 }
-async function searchS2(q) {
-  const u = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=12&fields=title,abstract,year,venue,authors,externalIds,citationCount,url`;
-  const j = await (await fetch(u)).json();
-  return (j.data || []).map((d) => ({
+const S2_FIELDS = 'title,abstract,year,venue,authors,externalIds,citationCount,url';
+function s2Norm(d) {
+  if (!d || !d.title) return null;
+  return {
     src: 's2', rawId: d.paperId,
     title: d.title, abstract: d.abstract || null,
     authors: (d.authors || []).map((a) => a.name),
     year: d.year, venue: d.venue || null,
     doi: d.externalIds?.DOI || null, arxivId: d.externalIds?.ArXiv || null,
     url: d.url, cites: d.citationCount,
-  }));
+  };
 }
+async function searchS2(q) {
+  const u = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(q)}&limit=12&fields=${S2_FIELDS}`;
+  const j = await (await fetch(u)).json();
+  return (j.data || []).map(s2Norm).filter(Boolean);
+}
+// Single-paper lookup by external id ('DOI:10.x/...' or 'arXiv:2403.01234').
+async function s2Paper(idstr) {
+  const r = await fetch(`https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(idstr)}?fields=${S2_FIELDS}`);
+  if (!r.ok) throw new Error('Semantic Scholar ' + r.status);
+  const n = s2Norm(await r.json());
+  if (!n) throw new Error('no record');
+  return n;
+}
+// References / citations of a paper (top 10 by S2 ordering).
+async function s2Linked(idstr, which) {
+  const r = await fetch(`https://api.semanticscholar.org/graph/v1/paper/${encodeURIComponent(idstr)}/${which}?fields=${S2_FIELDS}&limit=10`);
+  if (!r.ok) throw new Error('Semantic Scholar ' + r.status);
+  const j = await r.json();
+  return (j.data || []).map((x) => s2Norm(x.citedPaper || x.citingPaper)).filter(Boolean);
+}
+// Best id for graph lookups on any normalized record.
+const s2IdFor = (r) => r.doi ? 'DOI:' + r.doi : r.arxivId ? 'arXiv:' + r.arxivId : (r.src === 's2' ? r.rawId : null);
 async function searchDblp(q) {
   const u = `https://dblp.org/search/publ/api?q=${encodeURIComponent(q)}&format=json&h=12`;
   const j = await (await fetch(u)).json();
@@ -313,17 +371,56 @@ function bibtexFor(r) {
 const srcBadge = (s) => `<span class="badge src-${s}">${({ arxiv: 'arXiv', s2: 'Semantic Scholar', dblp: 'DBLP', openalex: 'OpenAlex' })[s] || s}</span>`;
 
 function paperRow(r, acts) {
+  const s2id = s2IdFor(r);
   return `<div class="paper">
     <div class="t">${esc(r.title)}</div>
     <div class="m">${esc((r.authors || []).slice(0, 6).join(', '))}${(r.authors || []).length > 6 ? ' et al.' : ''}
       ${r.year ? ' · ' + r.year : ''}${r.venue ? ' · <em>' + esc(r.venue) + '</em>' : ''}${r.cites != null ? ` · ${r.cites} citations` : ''}</div>
-    ${r.abstract ? `<div class="abs">${esc(r.abstract.length > 420 ? r.abstract.slice(0, 420) + '…' : r.abstract)}</div>` : ''}
+    ${r.abstract ? `<details class="absd"><summary>abstract</summary><div class="abs">${esc(r.abstract)}</div></details>` : ''}
     <div class="acts">${srcBadge(r.src)}${(r.alsoIn || []).map(srcBadge).join('')}
       ${r.url ? `<a class="more-link" href="${esc(r.url)}" target="_blank" rel="noopener">Open</a>` : ''}
       ${r.doi ? `<a class="more-link" href="https://doi.org/${esc(r.doi)}" target="_blank" rel="noopener">DOI</a>` : ''}
+      ${r.doi ? `<a class="more-link" href="https://papercards.vercel.app/#seed=${encodeURIComponent(r.doi)}" target="_blank" rel="noopener" title="Dissect this paper in PaperCards">PaperCards</a>` : ''}
+      ${s2id ? `<button class="more-link" data-linked="${esc(s2id)}" data-which="references" title="What this paper cites (top 10, Semantic Scholar)">refs ▸</button>
+                <button class="more-link" data-linked="${esc(s2id)}" data-which="citations" title="Who cites this paper (top 10, Semantic Scholar)">cited by ▸</button>` : ''}
       ${acts}
     </div>
+    <div class="linked" hidden></div>
   </div>`;
+}
+
+// Event delegation for refs/cited-by expansion + saving from the sublists.
+// Works in both the results pane and the reading list.
+function wireLinked(container, p, onSaved) {
+  container.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-linked]');
+    if (b) {
+      const holder = b.closest('.paper').querySelector('.linked');
+      if (!holder.hidden && holder.dataset.which === b.dataset.which) { holder.hidden = true; return; }
+      holder.hidden = false; holder.dataset.which = b.dataset.which;
+      holder.innerHTML = '<p class="statline">querying Semantic Scholar…</p>';
+      try {
+        const linked = await s2Linked(b.dataset.linked, b.dataset.which);
+        const saved = new Set(p.discover.papers.map(paperKey));
+        holder.__linked = linked;
+        holder.innerHTML = linked.length
+          ? `<div class="sub">${linked.map((r, i) => paperRow(r,
+              saved.has(paperKey(r)) ? '<span class="badge">✓ in reading list</span>'
+                : `<button class="more-link" data-lsave="${i}">⊕ Save</button>`)).join('')}</div>`
+          : '<p class="empty">nothing returned</p>';
+      } catch { holder.innerHTML = '<p class="empty">Semantic Scholar unavailable (rate limit?) — try again shortly.</p>'; }
+      return;
+    }
+    const s = e.target.closest('[data-lsave]');
+    if (s) {
+      const holder = s.closest('.linked');
+      const r = holder.__linked[+s.dataset.lsave];
+      if (!p.discover.papers.some((x) => paperKey(x) === paperKey(r))) p.discover.papers.push(r);
+      saveP(p);
+      s.outerHTML = '<span class="badge">✓ in reading list</span>';
+      onSaved?.();
+    }
+  });
 }
 
 function rDiscover(mount, p) {
@@ -333,12 +430,31 @@ function rDiscover(mount, p) {
         <input type="text" id="dq" class="grow" placeholder="Search the live literature — e.g. retrieval augmented generation long context" autocomplete="off">
         <button class="btn btn-fill" id="dgo">Search 4 sources</button>
       </div>
-      <div class="statline" id="dstat"></div>
+      <div class="row" style="margin-top:8px">
+        <label class="hint">sort</label>
+        <select id="dsort" style="max-width:150px">
+          <option value="cites">citations</option>
+          <option value="year">newest</option>
+          <option value="rel">as returned</option>
+        </select>
+        <label class="hint">from year</label>
+        <input type="number" id="dyear" placeholder="any" style="max-width:90px">
+        <span class="statline grow" id="dstat"></span>
+      </div>
       <div id="dres"></div>
     </div>
     <div class="card">
-      <h2 class="sec">Reading list <span class="hint">(${p.discover.papers.length})</span></h2>
-      <p class="hint">Saved records keep their source provenance; the Write stage turns this list into a real <span class="mono">refs.bib</span>.</p>
+      <h2 class="sec">Add by identifier</h2>
+      <p class="hint">Paste DOIs and/or arXiv ids (space/comma/newline separated) — each is resolved live via Semantic Scholar and saved verbatim.</p>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="dbulk" class="grow" placeholder="10.18653/v1/2020.acl-main.703, 2005.11401, …">
+        <button class="btn btn-ghost" id="dbulkgo">Resolve &amp; save</button>
+      </div>
+      <div class="statline" id="dbulkstat"></div>
+    </div>
+    <div class="card">
+      <h2 class="sec">Reading list <span class="hint" id="dcount">(${p.discover.papers.length})</span></h2>
+      <p class="hint">Saved records keep their source provenance; the Write stage turns this list into a real <span class="mono">refs.bib</span>. Use <em>refs ▸ / cited by ▸</em> to chain through the citation graph.</p>
       <div class="row" style="margin-top:8px">
         <button class="btn btn-ghost btn-sm" id="dbib">⬇ refs.bib</button>
         <button class="btn btn-ghost btn-sm" id="djson">⬇ reading-list JSON</button>
@@ -346,6 +462,7 @@ function rDiscover(mount, p) {
       <div id="dlist"></div>
     </div>`;
   const renderList = () => {
+    $('#dcount').textContent = `(${p.discover.papers.length})`;
     $('#dlist').innerHTML = p.discover.papers.length
       ? p.discover.papers.map((r, i) => paperRow(r, `
           <span class="badge">cite key: ${esc(bibKey(r))}</span>
@@ -356,8 +473,34 @@ function rDiscover(mount, p) {
     $$('#dlist [data-tag]').forEach((inp) => inp.addEventListener('input', () => { p.discover.papers[+inp.dataset.tag].tag = inp.value; saveSoon(p); }));
   };
   renderList();
+  wireLinked($('#dlist'), p, renderList);
+  wireLinked($('#dres'), p, renderList);
   $('#dbib').addEventListener('click', () => download('refs.bib', p.discover.papers.map(bibtexFor).join('\n\n'), 'text/plain'));
   $('#djson').addEventListener('click', () => download('reading-list.json', JSON.stringify(p.discover.papers, null, 2), 'application/json'));
+
+  let merged = [];
+  const renderResults = () => {
+    const sort = $('#dsort').value, fromY = +$('#dyear').value || 0;
+    let rs = merged.filter((r) => !fromY || (r.year || 0) >= fromY);
+    if (sort === 'cites') rs = [...rs].sort((a, b) => (b.cites ?? -1) - (a.cites ?? -1));
+    else if (sort === 'year') rs = [...rs].sort((a, b) => (b.year || 0) - (a.year || 0));
+    const saved = new Set(p.discover.papers.map(paperKey));
+    $('#dres').__rs = rs;
+    $('#dres').innerHTML = rs.map((r, i) => paperRow(r,
+      saved.has(paperKey(r))
+        ? '<span class="badge">✓ in reading list</span>'
+        : `<button class="more-link" data-save="${i}">⊕ Save</button>`)).join('');
+  };
+  $('#dres').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-save]');
+    if (!b) return;
+    const r = $('#dres').__rs[+b.dataset.save];
+    if (!p.discover.papers.some((x) => paperKey(x) === paperKey(r))) p.discover.papers.push(r);
+    saveP(p);
+    b.outerHTML = '<span class="badge">✓ in reading list</span>';
+    renderList();
+  });
+  ['dsort', 'dyear'].forEach((id) => $('#' + id).addEventListener('input', renderResults));
 
   const doSearch = async () => {
     const q = $('#dq').value.trim();
@@ -370,20 +513,32 @@ function rDiscover(mount, p) {
       if (r.status === 'fulfilled') { all.push(...r.value); notes.push(`${SOURCES[i].label} ${r.value.length}`); }
       else notes.push(`${SOURCES[i].label} unavailable`);
     });
-    const merged = dedupe(all).sort((a, b) => (b.cites ?? -1) - (a.cites ?? -1));
+    merged = dedupe(all);
     $('#dstat').textContent = `${merged.length} unique results — ${notes.join(' · ')}`;
-    const saved = new Set(p.discover.papers.map(paperKey));
-    $('#dres').innerHTML = merged.map((r, i) => paperRow(r,
-      saved.has(paperKey(r))
-        ? '<span class="badge">✓ in reading list</span>'
-        : `<button class="more-link" data-save="${i}">⊕ Save</button>`)).join('');
-    $$('#dres [data-save]').forEach((b) => b.addEventListener('click', () => {
-      p.discover.papers.push(merged[+b.dataset.save]); saveP(p);
-      b.outerHTML = '<span class="badge">✓ in reading list</span>'; renderList();
-    }));
+    renderResults();
   };
   $('#dgo').addEventListener('click', doSearch);
   $('#dq').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+
+  $('#dbulkgo').addEventListener('click', async () => {
+    const ids = $('#dbulk').value.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+    if (!ids.length) return;
+    const stat = $('#dbulkstat');
+    let okN = 0, failN = 0;
+    for (const [i, raw] of ids.entries()) {
+      const id = raw.replace(/^(https?:\/\/)?(dx\.)?doi\.org\//, '').replace(/^(https?:\/\/)?arxiv\.org\/abs\//, '');
+      const idstr = /^\d{4}\.\d{4,5}(v\d+)?$/.test(id) ? 'arXiv:' + id.replace(/v\d+$/, '') : id.includes('/') ? 'DOI:' + id : null;
+      stat.textContent = `resolving ${i + 1}/${ids.length} — ${id}…`;
+      if (!idstr) { failN++; continue; }
+      try {
+        const r = await s2Paper(idstr);
+        if (!p.discover.papers.some((x) => paperKey(x) === paperKey(r))) { p.discover.papers.push(r); okN++; }
+      } catch { failN++; }
+      await new Promise((res) => setTimeout(res, 1100)); // shared anonymous rate pool
+    }
+    saveP(p); renderList();
+    stat.textContent = `saved ${okN} · ${failN ? failN + ' failed (bad id or rate limit — retry shortly)' : 'all resolved'}`;
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -474,6 +629,18 @@ function rDesign(mount, p) {
       <p class="hint" style="margin-top:6px">Creates one planned run per method × dataset × seed (skips combinations already tracked).</p>
     </div>
     <div class="card">
+      <h2 class="sec">How many seeds do you need?</h2>
+      <p class="hint">From a pilot: the run-to-run standard deviation of your metric, and the smallest difference worth detecting. Uses Cohen's two-sample normal approximation n ≈ 2((z<sub>α/2</sub>+z<sub>β</sub>)·σ/δ)² — treat the answer as a floor, not a law.</p>
+      <div class="row" style="margin-top:10px">
+        <label class="hint">pilot sd (σ)</label><input type="number" id="g-psd" step="any" placeholder="e.g. 0.4" style="max-width:110px">
+        <label class="hint">difference to detect (δ)</label><input type="number" id="g-pdelta" step="any" placeholder="e.g. 0.5" style="max-width:110px">
+        <label class="hint">α</label><select id="g-palpha" style="max-width:90px"><option>0.05</option><option>0.01</option></select>
+        <label class="hint">power</label><select id="g-ppower" style="max-width:90px"><option>0.8</option><option>0.9</option></select>
+        <button class="btn btn-ghost btn-sm" id="g-pgo">Compute</button>
+      </div>
+      <div id="g-pres" class="note-fab" hidden></div>
+    </div>
+    <div class="card">
       <h2 class="sec">Threats to validity</h2>
       ${[['internal', 'Internal — could something other than your method explain the result? (tuning budget parity, same train/eval splits, identical hardware)'],
          ['external', 'External — will it hold beyond your setup? (more datasets, model scales, distribution shift)'],
@@ -487,6 +654,13 @@ function rDesign(mount, p) {
   bind($('#g-seeds'), d, 'seeds', p);
   bind($('#g-abl'), d, 'ablations', p);
   $$('[data-th]').forEach((c) => c.addEventListener('change', () => { d.threats[c.dataset.th] = c.checked; saveSoon(p); }));
+  $('#g-pgo').addEventListener('click', () => {
+    const n = S.seedsNeeded({ sd: +$('#g-psd').value, delta: +$('#g-pdelta').value, alpha: +$('#g-palpha').value, power: +$('#g-ppower').value });
+    const box = $('#g-pres'); box.hidden = false;
+    box.innerHTML = n
+      ? `≈ <strong>${n} seeds per method</strong> to detect δ=${esc($('#g-pdelta').value)} at α=${esc($('#g-palpha').value)} with ${Math.round(+$('#g-ppower').value * 100)}% power. Paired designs (same seeds for both methods) usually need fewer.`
+      : 'Enter a positive sd and difference.';
+  });
 
   const renderDs = () => {
     $('#g-dslist').innerHTML = d.datasets.length
@@ -581,9 +755,18 @@ function rExperiment(mount, p) {
         <button class="btn btn-ghost btn-sm" id="r-csv">⬇ CSV</button>
         <button class="btn btn-ghost btn-sm" id="r-json">⬇ JSON</button>
         <button class="btn btn-ghost btn-sm" id="r-imp">⬆ JSON</button>
+        <select id="r-fm" style="max-width:150px"><option value="">all methods</option></select>
+        <select id="r-fd" style="max-width:150px"><option value="">all datasets</option></select>
         <span class="statline" id="r-stat"></span>
       </div>
       <div id="r-table" style="overflow-x:auto"></div>
+    </div>
+    <div class="card">
+      <h2 class="sec">Bulk log</h2>
+      <p class="hint">One run per line: <span class="mono">method | dataset | seed | acc=0.912 f1=0.887</span> — paste straight from your training logs.</p>
+      <textarea id="r-bulk" placeholder="ours | squad | 1 | acc=0.912 f1=0.887&#10;ours | squad | 2 | acc=0.918 f1=0.891"></textarea>
+      <button class="btn btn-ghost btn-sm" id="r-bulkgo" style="margin-top:8px">Add all</button>
+      <span class="statline" id="r-bulkstat"></span>
     </div>
     <div class="card">
       <h2 class="sec">Reproducibility checklist</h2>
@@ -597,19 +780,34 @@ function rExperiment(mount, p) {
     </div>`;
   $$('[data-rp]').forEach((c) => c.addEventListener('change', () => { ex.repro[c.dataset.rp] = c.checked; saveSoon(p); }));
 
+  const STATUSES = ['planned', 'running', 'done', 'failed'];
+  const stColor = { planned: 'var(--ink-faint)', running: '#D9A23B', done: '#2E9E6B', failed: 'var(--magenta)' };
+  const refreshFilters = () => {
+    const keep = (sel, vals) => {
+      const cur = sel.value;
+      sel.innerHTML = `<option value="">${sel.id === 'r-fm' ? 'all methods' : 'all datasets'}</option>` + vals.map((v) => `<option${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+    };
+    keep($('#r-fm'), [...new Set(ex.runs.map((r) => r.method))]);
+    keep($('#r-fd'), [...new Set(ex.runs.map((r) => r.dataset))]);
+  };
   const renderTable = () => {
-    const mkeys = [...new Set(ex.runs.flatMap((r) => Object.keys(r.metrics || {})))];
-    $('#r-stat').textContent = `${ex.runs.length} runs · ${ex.runs.filter((r) => Object.keys(r.metrics || {}).length).length} with results`;
-    $('#r-table').innerHTML = ex.runs.length ? `<table class="tl">
-      <tr><th>method</th><th>dataset</th><th>seed</th>${mkeys.map((k) => `<th>${esc(k)}</th>`).join('')}<th>status</th><th>config</th><th></th></tr>
-      ${ex.runs.map((r, i) => `<tr>
+    refreshFilters();
+    const fm = $('#r-fm').value, fd = $('#r-fd').value;
+    const rows = ex.runs.map((r, i) => ({ r, i })).filter(({ r }) => (!fm || r.method === fm) && (!fd || r.dataset === fd));
+    const mkeys = [...new Set(rows.flatMap(({ r }) => Object.keys(r.metrics || {})))];
+    $('#r-stat').textContent = `${rows.length}/${ex.runs.length} runs · ${ex.runs.filter((r) => Object.keys(r.metrics || {}).length).length} with results`;
+    $('#r-table').innerHTML = rows.length ? `<table class="tl">
+      <tr><th>method</th><th>dataset</th><th>seed</th>${mkeys.map((k) => `<th>${esc(k)}</th>`).join('')}<th>log metrics</th><th>status</th><th>config</th><th></th></tr>
+      ${rows.map(({ r, i }) => `<tr>
         <td><strong>${esc(r.method)}</strong></td><td>${esc(r.dataset)}</td><td class="mono">${esc(r.seed)}</td>
         ${mkeys.map((k) => `<td class="mono">${r.metrics?.[k] != null ? r.metrics[k] : '—'}</td>`).join('')}
         <td><input type="text" data-rmx="${i}" value="${esc(metricsStr(r.metrics))}" placeholder="acc=…" style="min-width:130px;padding:3px 7px;font-size:.74rem"></td>
+        <td><select data-rst="${i}" style="padding:3px 6px;font-size:.74rem;max-width:100px;color:${stColor[r.status] || 'inherit'}">${STATUSES.map((s) => `<option${s === r.status ? ' selected' : ''}>${s}</option>`).join('')}</select></td>
         <td class="hint" title="${esc(r.params)}">${esc((r.params || '').slice(0, 24))}${(r.params || '').length > 24 ? '…' : ''}</td>
         <td><button class="del" data-rrm="${i}">✕</button></td></tr>`).join('')}
-    </table>` : '<p class="empty">No runs yet — log one above, or seed the matrix from Design.</p>';
+    </table>` : '<p class="empty">No runs match — log one above, or seed the matrix from Design.</p>';
     $$('#r-table [data-rrm]').forEach((b) => b.addEventListener('click', () => { ex.runs.splice(+b.dataset.rrm, 1); saveP(p); renderTable(); }));
+    $$('#r-table [data-rst]').forEach((sel) => sel.addEventListener('change', () => { ex.runs[+sel.dataset.rst].status = sel.value; saveSoon(p); sel.style.color = stColor[sel.value]; }));
     $$('#r-table [data-rmx]').forEach((inp) => inp.addEventListener('change', () => {
       const r = ex.runs[+inp.dataset.rmx];
       r.metrics = parseMetrics(inp.value);
@@ -618,6 +816,25 @@ function rExperiment(mount, p) {
     }));
   };
   renderTable();
+  ['r-fm', 'r-fd'].forEach((id) => $('#' + id).addEventListener('change', renderTable));
+  $('#r-bulkgo').addEventListener('click', () => {
+    const lines = $('#r-bulk').value.split('\n').map((s) => s.trim()).filter(Boolean);
+    let added = 0, bad = 0;
+    for (const line of lines) {
+      const parts = line.split('|').map((s) => s.trim());
+      if (parts.length < 4) { bad++; continue; }
+      const [method, dataset, seed] = parts;
+      const metrics = parseMetrics(parts.slice(3).join(' '));
+      if (!method || !dataset || !Object.keys(metrics).length) { bad++; continue; }
+      const dup = ex.runs.find((r) => r.method === method && r.dataset === dataset && String(r.seed) === seed);
+      if (dup) { dup.metrics = { ...dup.metrics, ...metrics }; dup.status = 'done'; }
+      else ex.runs.push({ id: uid(), method, dataset, seed, params: '', metrics, status: 'done', notes: '', ts: new Date().toISOString() });
+      added++;
+    }
+    saveP(p); renderTable();
+    $('#r-bulkstat').textContent = `${added} runs added/updated${bad ? ` · ${bad} lines skipped (need method | dataset | seed | metrics)` : ''}`;
+    if (added) $('#r-bulk').value = '';
+  });
   $('#r-add').addEventListener('click', () => {
     const method = $('#r-method').value.trim(), dataset = $('#r-dataset').value.trim();
     if (!method || !dataset) return alert('method + dataset are required');
@@ -664,6 +881,22 @@ function rAnalyze(mount, p) {
       </div><div id="a-agg"></div>` : '<p class="empty">No runs with metrics yet — log results in the Experiment stage first.</p>'}
     </div>
     ${mkeys.length ? `
+    <div class="card">
+      <h2 class="sec">Seed-level plot</h2>
+      <p class="hint">Every seed as a dot, the mean as a diamond, whiskers = 95% CI. The plot your reviewer wishes you'd shown.</p>
+      <div class="row" style="margin-top:8px">
+        <label class="hint">dataset</label>
+        <select id="a-pds" style="max-width:200px">${datasets.map((d) => `<option>${esc(d)}</option>`).join('')}</select>
+        <button class="btn btn-ghost btn-sm" id="a-psvg">⬇ SVG</button>
+      </div>
+      <div id="a-plot" style="margin-top:10px;overflow-x:auto"></div>
+    </div>
+    <div class="card">
+      <h2 class="sec">All pairs, honestly corrected</h2>
+      <p class="hint">Every method pair on the selected dataset, Holm–Bonferroni-adjusted — running many comparisons and reporting raw p-values is how false wins get published.</p>
+      <button class="btn btn-ghost btn-sm" id="a-all" style="margin-top:8px">Compare all pairs</button>
+      <div id="a-allres" style="overflow-x:auto"></div>
+    </div>
     <div class="card">
       <h2 class="sec">Compare two methods</h2>
       <p class="hint">Pairs runs by seed when both methods share the same seeds (paired t-test); otherwise falls back to Welch's t-test. Cohen's d reported alongside p — a tiny p with a tiny effect is still a tiny effect.</p>
@@ -718,8 +951,86 @@ function rAnalyze(mount, p) {
       : '<p class="empty">Nothing captured yet.</p>';
     $$('#a-caps [data-crm]').forEach((b) => b.addEventListener('click', () => { p.analyze.captures.splice(+b.dataset.crm, 1); saveP(p); renderCaps(); }));
   };
-  $('#a-metric').addEventListener('change', agg);
-  agg(); renderCaps();
+  // ── seed-level dot plot (hand-rolled SVG, downloadable) ──
+  const HUES = ['#FF9656', '#F14575', '#9270F4', '#D957A8', '#7A82F7', '#B964D4', '#2E9E6B'];
+  const plot = () => {
+    const metric = $('#a-metric').value, ds = $('#a-pds').value;
+    const groups = methods.map((m, mi) => ({
+      m, hue: HUES[mi % HUES.length],
+      vals: runs.filter((r) => r.method === m && r.dataset === ds && r.metrics[metric] != null).map((r) => r.metrics[metric]),
+    })).filter((g) => g.vals.length);
+    if (!groups.length) { $('#a-plot').innerHTML = '<p class="empty">no results on that dataset</p>'; return; }
+    const allVals = groups.flatMap((g) => g.vals);
+    let lo = Math.min(...allVals), hi = Math.max(...allVals);
+    if (lo === hi) { lo -= Math.abs(lo) * 0.05 || 0.5; hi += Math.abs(hi) * 0.05 || 0.5; }
+    const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+    const W = 720, LBL = 150, RH = 44, H = groups.length * RH + 40;
+    const x = (v) => LBL + ((v - lo) / (hi - lo)) * (W - LBL - 20);
+    const ink = 'var(--ink-soft, #574E64)';
+    let s = `<svg id="a-plotsvg" viewBox="0 0 ${W} ${H}" width="100%" style="min-width:560px" font-family="IBM Plex Mono,monospace" font-size="11">`;
+    for (let t = 0; t <= 4; t++) {
+      const v = lo + ((hi - lo) * t) / 4, px = x(v);
+      s += `<line x1="${px}" y1="14" x2="${px}" y2="${H - 26}" stroke="currentColor" opacity=".12"/>` +
+           `<text x="${px}" y="${H - 10}" text-anchor="middle" fill="${ink}">${v.toFixed(3)}</text>`;
+    }
+    groups.forEach((g, gi) => {
+      const cy = 26 + gi * RH + RH / 2 - 8;
+      s += `<text x="${LBL - 10}" y="${cy + 4}" text-anchor="end" fill="${ink}" font-weight="600">${esc(g.m)}</text>`;
+      if (g.vals.length > 1) {
+        const sm = S.summarize(g.vals);
+        s += `<line x1="${x(sm.ci95[0])}" y1="${cy}" x2="${x(sm.ci95[1])}" y2="${cy}" stroke="${g.hue}" stroke-width="2.5" opacity=".55"/>`;
+        const mx = x(sm.mean);
+        s += `<path d="M ${mx} ${cy - 7} L ${mx + 6} ${cy} L ${mx} ${cy + 7} L ${mx - 6} ${cy} Z" fill="${g.hue}"/>`;
+      }
+      for (const v of g.vals) s += `<circle cx="${x(v)}" cy="${cy}" r="4" fill="${g.hue}" opacity=".5"/>`;
+    });
+    s += '</svg>';
+    $('#a-plot').innerHTML = s + `<div class="statline">${esc(metric)} on ${esc(ds)} — dot = one seed, ◆ = mean, bar = 95% CI</div>`;
+  };
+  $('#a-psvg').addEventListener('click', () => {
+    const svg = $('#a-plotsvg'); if (!svg) return;
+    const ds = $('#a-pds').value, metric = $('#a-metric').value;
+    download(`plot-${metric}-${ds}.svg`.replace(/[^\w.-]+/g, '_'),
+      svg.outerHTML.replace(/var\(--ink-soft, ?#574E64\)/g, '#574E64').replace(/currentColor/g, '#574E64'), 'image/svg+xml');
+  });
+  $('#a-pds').addEventListener('change', plot);
+
+  // ── all-pairs with Holm correction ──
+  $('#a-all').addEventListener('click', () => {
+    const metric = $('#a-metric').value, ds = $('#a-ds').value;
+    const pairs = [];
+    for (let i = 0; i < methods.length; i++) for (let j = i + 1; j < methods.length; j++) {
+      const va = runs.filter((r) => r.method === methods[i] && r.dataset === ds && r.metrics[metric] != null);
+      const vb = runs.filter((r) => r.method === methods[j] && r.dataset === ds && r.metrics[metric] != null);
+      if (va.length < 2 || vb.length < 2) continue;
+      const sa = new Map(va.map((r) => [String(r.seed), r.metrics[metric]]));
+      const sb = new Map(vb.map((r) => [String(r.seed), r.metrics[metric]]));
+      const shared = [...sa.keys()].filter((k) => sb.has(k) && k !== '');
+      let res, kind;
+      if (shared.length >= 2 && shared.length === sa.size && shared.length === sb.size) {
+        kind = 'paired'; res = S.pairedT(shared.map((k) => sa.get(k)), shared.map((k) => sb.get(k)));
+      } else {
+        kind = 'Welch'; res = S.welchT(va.map((r) => r.metrics[metric]), vb.map((r) => r.metrics[metric]));
+      }
+      pairs.push({ a: methods[i], b: methods[j], kind, res });
+    }
+    if (!pairs.length) return ($('#a-allres').innerHTML = '<p class="empty">Need ≥2 results per method on that dataset (pick the dataset in the compare card below).</p>');
+    const adj = S.holm(pairs.map((x) => (Number.isFinite(x.res.p) ? x.res.p : 0)));
+    $('#a-allres').innerHTML = `<table class="tl">
+      <tr><th>pair</th><th>test</th><th>t</th><th>p</th><th>p (Holm)</th><th>effect</th><th>verdict at α=.05</th></tr>
+      ${pairs.map((x, i) => {
+        const e = x.kind === 'paired' ? x.res.dz : x.res.d;
+        return `<tr><td><strong>${esc(x.a)}</strong> vs <strong>${esc(x.b)}</strong> · ${esc(ds)}</td>
+          <td>${x.kind}</td><td class="mono">${Number.isFinite(x.res.t) ? fmt(x.res.t, 3) : '∞'}</td>
+          <td class="mono">${fmt(x.res.p)}</td><td class="mono">${fmt(adj[i])}</td>
+          <td class="mono">${fmt(e, 3)}</td>
+          <td>${adj[i] < 0.05 ? `<strong>${esc(x.res.meanDiff > 0 ? x.a : x.b)}</strong> higher ✓` : 'no claim ✗'}</td></tr>`;
+      }).join('')}
+    </table><p class="statline">${pairs.length} comparisons · Holm–Bonferroni family-wise correction applied</p>`;
+  });
+
+  $('#a-metric').addEventListener('change', () => { agg(); plot(); });
+  agg(); plot(); renderCaps();
 
   $('#a-cmp').addEventListener('click', () => {
     const metric = $('#a-metric').value, m1 = $('#a-m1').value, m2 = $('#a-m2').value, ds = $('#a-ds').value;
@@ -785,9 +1096,19 @@ function rWrite(mount, p) {
         ${k === 'related' ? '<button class="btn btn-ghost btn-sm" id="w-ir" style="margin:8px 0 0">⊕ Insert reading list grouped by tag</button>' : ''}
         ${k === 'results' ? `<div class="row" style="margin:8px 0 0">${p.analyze.captures.map((c, i) => `<button class="btn btn-ghost btn-sm" data-cap="${i}">⊕ ${esc(c.title)}</button>`).join('') || '<span class="hint">capture a table in Analyze to insert it here</span>'}</div>` : ''}
         <textarea data-sec="${k}" style="min-height:110px;margin-top:10px"></textarea>
+        <div class="statline" data-wc="${k}"></div>
       </div>`).join('')}`;
-  $$('[data-sec]').forEach((t) => { t.value = w[t.dataset.sec] || ''; t.addEventListener('input', () => { w[t.dataset.sec] = t.value; saveSoon(p); }); });
-  const append = (k, text) => { const t = $(`[data-sec="${k}"]`); t.value = (t.value ? t.value + '\n\n' : '') + text; w[k] = t.value; saveP(p); };
+  const words = (s) => (s || '').trim() ? (s.trim().match(/\S+/g) || []).length : 0;
+  const updateWc = (k) => {
+    const n = words(w[k]);
+    const el = $(`[data-wc="${k}"]`);
+    el.textContent = n ? `${n} words${k === 'abstract' ? (n < 150 ? ' · short for an abstract (150–250 typical)' : n > 250 ? ' · long for an abstract (150–250 typical)' : ' · ✓ abstract-sized') : ''}` : '';
+  };
+  $$('[data-sec]').forEach((t) => {
+    t.value = w[t.dataset.sec] || ''; updateWc(t.dataset.sec);
+    t.addEventListener('input', () => { w[t.dataset.sec] = t.value; saveSoon(p); updateWc(t.dataset.sec); });
+  });
+  const append = (k, text) => { const t = $(`[data-sec="${k}"]`); t.value = (t.value ? t.value + '\n\n' : '') + text; w[k] = t.value; saveP(p); updateWc(k); };
   $('#w-ic')?.addEventListener('click', () => {
     const c = (p.frame.contributions || '').split('\n').filter((s) => s.trim());
     append('intro', c.length ? 'Our contributions are:\n' + c.map((x) => '- ' + x.trim()).join('\n') : '(no contributions written in Frame yet)');
@@ -860,8 +1181,31 @@ function rPublish(mount, p) {
       <div class="row">
         <a class="more-link" href="${dblpUrl(v)}" target="_blank" rel="noopener">DBLP</a>
         ${v.site ? `<a class="more-link" href="${v.site}" target="_blank" rel="noopener">Site</a>` : ''}
+        <button class="more-link" data-oa="${v.id}" title="Resolve this venue on OpenAlex and show live works/citations/h-index">metrics</button>
         <button class="more-link" data-star="${v.id}">${pub.shortlist.includes(v.id) ? '★ shortlisted' : '☆ shortlist'}</button>
-      </div></div>`;
+      </div>
+      <div class="vlive statline" data-oares="${v.id}"></div></div>`;
+  // Live venue metrics — resolved on demand via OpenAlex sources search with a
+  // strict token gate (≥70% of name tokens must appear in the matched source's
+  // display_name) so we never show the wrong venue's numbers. Cached per session.
+  const oaCache = {};
+  async function oaMetrics(v) {
+    if (oaCache[v.id] !== undefined) return oaCache[v.id];
+    const q = (v.name.split('—')[1] || v.name).trim();
+    const j = await (await fetch(`https://api.openalex.org/sources?search=${encodeURIComponent(q)}&per-page=10`)).json();
+    const toks = q.toLowerCase().split(/\W+/).filter((t) => t.length > 2);
+    let best = null;
+    for (const s of j.results || []) {
+      const dn = (s.display_name || '').toLowerCase();
+      const hit = toks.filter((t) => dn.includes(t)).length / toks.length;
+      if (hit >= 0.7 && (!best || s.works_count > best.works_count)) best = s;
+    }
+    oaCache[v.id] = best ? {
+      name: best.display_name, works: best.works_count, cites: best.cited_by_count,
+      h: best.summary_stats?.h_index, url: best.id,
+    } : null;
+    return oaCache[v.id];
+  }
   const renderVenues = () => {
     const area = $('#v-area').value, type = $('#v-type').value, q = $('#v-q').value.toLowerCase();
     const vs = VENUES.filter((v) => (!area || v.area === area) && (!type || v.type === type) && (!q || v.name.toLowerCase().includes(q)));
@@ -873,6 +1217,17 @@ function rPublish(mount, p) {
       const id = b.dataset.star;
       pub.shortlist = pub.shortlist.includes(id) ? pub.shortlist.filter((x) => x !== id) : [...pub.shortlist, id];
       saveP(p); renderVenues();
+    }));
+    $$('[data-oa]').forEach((b) => b.addEventListener('click', async () => {
+      const v = VENUES.find((x) => x.id === b.dataset.oa);
+      const out = b.closest('.vcard').querySelector(`[data-oares="${v.id}"]`);
+      out.textContent = 'resolving on OpenAlex…';
+      try {
+        const m = await oaMetrics(v);
+        out.innerHTML = m
+          ? `${m.works.toLocaleString()} works · ${m.cites.toLocaleString()} citations${m.h != null ? ' · h-index ' + m.h : ''} — <a href="${esc(m.url)}" target="_blank" rel="noopener">OpenAlex ↗</a> <span class="badge">live · verify</span>`
+          : `no confident OpenAlex match — <a href="https://openalex.org/sources?search=${encodeURIComponent(v.name)}" target="_blank" rel="noopener">search manually ↗</a>`;
+      } catch { out.textContent = 'OpenAlex unavailable right now'; }
     }));
   };
   ['v-area', 'v-type'].forEach((id) => $('#' + id).addEventListener('change', renderVenues));

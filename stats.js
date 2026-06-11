@@ -109,6 +109,39 @@ export function welchT(a, b) {
   return { t, df, p: tTwoSidedP(t, df), d: sp === 0 ? NaN : (ma - mb) / sp, meanDiff: ma - mb };
 }
 
+// Holm–Bonferroni step-down adjusted p-values (controls FWER across a
+// family of comparisons). Input order preserved.
+export function holm(pvals) {
+  const m = pvals.length;
+  const idx = pvals.map((p, i) => [p, i]).sort((a, b) => a[0] - b[0]);
+  const adj = new Array(m);
+  let running = 0;
+  idx.forEach(([p, orig], rank) => {
+    running = Math.max(running, Math.min(1, (m - rank) * p));
+    adj[orig] = running;
+  });
+  return adj;
+}
+
+// Seeds needed per group to detect a difference `delta` given pilot sd, at
+// two-sided α and power 1−β — Cohen's normal-approximation formula
+// n ≈ 2((z_{α/2}+z_β)·sd/δ)². An approximation: treat as a floor, not a law.
+export function seedsNeeded({ sd, delta, alpha = 0.05, power = 0.8 }) {
+  if (!(sd > 0) || !(delta > 0)) return null;
+  const z = (p) => { // inverse normal CDF (Acklam-style via bisection on erf-free tCDF with huge df)
+    let lo = -10, hi = 10;
+    for (let i = 0; i < 100; i++) {
+      const mid = (lo + hi) / 2;
+      const cdf = 1 - tTwoSidedP(Math.abs(mid), 1e7) / 2;
+      const val = mid >= 0 ? cdf : 1 - cdf;
+      if (val < p) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  const za = z(1 - alpha / 2), zb = z(power);
+  return Math.ceil(2 * ((za + zb) * sd / delta) ** 2);
+}
+
 // ── Bootstrap (deterministic, seeded) ─────────────────────────────
 export function mulberry32(seed) {
   let s = seed >>> 0;
