@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Throughline CS — computer-science research, end to end</title>
+<meta name="description" content="A guided workflow for computer-science research: discover the literature (arXiv · Semantic Scholar · DBLP · OpenAlex), frame the problem, design experiments, track runs, analyze with real statistics, write the paper, pick the venue.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='url(%23g)'/><text x='50%25' y='57%25' dominant-baseline='middle' text-anchor='middle' font-family='system-ui' font-weight='900' font-size='15' fill='white'>{}</text><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%23FF9656'/><stop offset='52%25' stop-color='%23F14575'/><stop offset='100%25' stop-color='%239270F4'/></linearGradient></defs></svg>" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   THROUGHLINE CS — computer-science research, end to end.
+   Static, no build. Syed Fire tokens + syed-bose link grammar.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --paper:   #FBF7EF;
+  --paper-2: #FFFFFF;
+  --paper-3: #F3ECDF;
+  --ink:     #211B2E;
+  --ink-soft:#574E64;
+  --ink-faint:#8C8498;
+  --line:    rgba(33,27,46,.12);
+  --line-soft:rgba(33,27,46,.07);
+  --coral:   #FF9656;
+  --magenta: #F14575;
+  --violet:  #9270F4;
+  --grad:    linear-gradient(135deg, #FF9656 0%, #F14575 52%, #9270F4 100%);
+  --shadow:  0 1px 2px rgba(33,27,46,.05), 0 24px 60px -28px rgba(33,27,46,.35);
+  --shadow-sm: 0 1px 2px rgba(33,27,46,.04), 0 8px 24px -14px rgba(33,27,46,.3);
+  --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --serif: 'Fraunces', Georgia, serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+html[data-theme="dark"] {
+  --paper:   #14111C;
+  --paper-2: #1C1827;
+  --paper-3: #241F31;
+  --ink:     #F4EFF8;
+  --ink-soft:#B8AEC6;
+  --ink-faint:#7C7389;
+  --line:    rgba(255,255,255,.13);
+  --line-soft:rgba(255,255,255,.07);
+  --shadow:  0 1px 2px rgba(0,0,0,.5), 0 24px 60px -24px rgba(0,0,0,.7);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.6);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--sans); background: var(--paper); color: var(--ink);
+  line-height: 1.6; -webkit-font-smoothing: antialiased;
+  transition: background .4s ease, color .4s ease;
+}
+/* paper grain */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  opacity: .035; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] body::before { mix-blend-mode: screen; opacity: .05; }
+a { color: inherit; }
+button { font-family: inherit; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 2; }
+
+/* ── Brand bar (hand-written, standalone project) ─────────────── */
+.bar {
+  position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px;
+  padding: 9px 18px; border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+.bar .mark {
+  width: 27px; height: 27px; border-radius: 8px; background: var(--grad);
+  display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 14px; flex: none;
+  text-decoration: none;
+}
+.bar .name { font-weight: 800; font-size: .95rem; letter-spacing: -.01em; text-decoration: none; }
+.bar .proj { font-family: var(--mono); font-size: .72rem; color: var(--ink-faint); border-left: 1px solid var(--line); padding-left: 12px; }
+.bar .sp { flex: 1; }
+.bar .blink { font-size: .8rem; font-weight: 600; color: var(--ink-soft); text-decoration: none; padding: 6px 10px; border-radius: 8px; }
+.bar .blink:hover { color: var(--magenta); background: var(--paper-3); }
+.theme-toggle { border: 1px solid var(--line); background: var(--paper-2); border-radius: 9px; padding: 4px 9px; cursor: pointer; font-size: .85rem; }
+
+/* ── syed-bose grammar ────────────────────────────────────────── */
+.more-link {
+  display: inline-block; font-family: var(--mono); font-size: .7rem; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--violet);
+  border-bottom: 2px solid var(--magenta); padding: 1px 2px 3px;
+  text-decoration: none; white-space: nowrap; cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0;
+  transition: color .2s, border-color .2s;
+}
+.more-link:hover { color: var(--magenta); border-bottom-color: var(--violet); }
+.circle-arrow {
+  position: relative; display: inline-block; flex: none; vertical-align: middle;
+  width: 40px; height: 40px; border: 2.5px solid currentColor; border-radius: 50%;
+  color: var(--magenta);
+}
+.circle-arrow::before, .circle-arrow::after {
+  content: ''; position: absolute; left: 12px; width: 13px; height: 2.5px;
+  border-radius: 2px; background: currentColor;
+}
+.circle-arrow::before { top: 22px; transform: rotate(-45deg); }
+.circle-arrow::after  { top: 13px; transform: rotate(45deg); }
+
+/* ── Type & section grammar ───────────────────────────────────── */
+.kicker {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--magenta); font-weight: 600; margin-bottom: 10px;
+}
+h1.display {
+  font-family: var(--serif); font-weight: 600; letter-spacing: -.02em; line-height: 1.06;
+  font-size: clamp(2rem, 5vw, 3.4rem); font-optical-sizing: auto; text-wrap: balance;
+}
+h1.display em { font-style: italic; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lede { color: var(--ink-soft); max-width: 62ch; margin-top: 14px; font-size: 1.04rem; }
+h2.sec { font-family: var(--serif); font-weight: 600; font-size: 1.45rem; letter-spacing: -.01em; margin: 0 0 6px; }
+.hint { font-size: .82rem; color: var(--ink-faint); }
+.mono { font-family: var(--mono); }
+
+/* ── Cards, forms, tables ─────────────────────────────────────── */
+.card {
+  background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 16px;
+  padding: 20px 22px; box-shadow: var(--shadow-sm); margin-top: 18px;
+}
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.grow { flex: 1; min-width: 180px; }
+input[type=text], input[type=number], textarea, select {
+  font-family: inherit; font-size: .92rem; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; width: 100%; outline: none; transition: border-color .15s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--violet); }
+textarea { resize: vertical; min-height: 74px; }
+label.fl { display: block; font-size: .8rem; font-weight: 700; color: var(--ink-soft); margin: 14px 0 5px; }
+label.fl .hint { font-weight: 400; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .88rem;
+  padding: 10px 18px; border-radius: 11px; border: 1px solid transparent; cursor: pointer; transition: .2s;
+}
+.btn-fill { background: var(--grad); color: #fff; box-shadow: 0 10px 24px -12px rgba(241,69,117,.55); }
+.btn-fill:hover { transform: translateY(-1px); }
+.btn-ghost { background: var(--paper-2); border-color: var(--line); color: var(--ink); }
+.btn-ghost:hover { border-color: var(--magenta); color: var(--magenta); }
+.btn-sm { padding: 6px 12px; font-size: .8rem; border-radius: 9px; }
+table.tl { width: 100%; border-collapse: collapse; font-size: .86rem; margin-top: 10px; }
+table.tl th { font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); text-align: left; padding: 7px 9px; border-bottom: 2px solid var(--line); }
+table.tl td { padding: 8px 9px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: .64rem; font-weight: 600;
+  letter-spacing: .05em; padding: 2px 8px; border-radius: 999px;
+  background: var(--paper-3); color: var(--ink-soft); white-space: nowrap;
+}
+.badge.src-arxiv { background: rgba(178,24,43,.12); color: #C2334D; }
+.badge.src-s2 { background: rgba(36,99,235,.12); color: #4A6CF7; }
+.badge.src-dblp { background: rgba(20,120,90,.13); color: #1B8A6B; }
+.badge.src-openalex { background: rgba(146,112,244,.14); color: var(--violet); }
+html[data-theme="dark"] .badge.src-arxiv { color: #FF8FA0; }
+html[data-theme="dark"] .badge.src-s2 { color: #92AAFF; }
+html[data-theme="dark"] .badge.src-dblp { color: #5BD0AC; }
+
+/* ── Stage navigation (per-stage hue --sc) ────────────────────── */
+.stage-nav { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 4px; }
+.stage-pill {
+  display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+  font-size: .8rem; font-weight: 700; color: var(--ink-soft);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px;
+  background: var(--paper-2); transition: .15s;
+}
+.stage-pill .n {
+  font-family: var(--mono); font-size: .64rem; width: 17px; height: 17px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--paper-3); color: var(--ink-faint);
+}
+.stage-pill.done .n { background: var(--sc, var(--magenta)); color: #fff; }
+.stage-pill:hover { border-color: var(--sc, var(--magenta)); color: var(--ink); }
+.stage-pill.active { border-color: var(--sc, var(--magenta)); color: var(--ink); box-shadow: inset 0 0 0 1px var(--sc, var(--magenta)); }
+.stage-pill.active .n { background: var(--sc, var(--magenta)); color: #fff; }
+.spine { height: 3px; border-radius: 3px; background: var(--line-soft); margin: 10px 0 26px; overflow: hidden; }
+.spine > i { display: block; height: 100%; background: var(--grad); width: var(--fill, 0%); transition: width .4s ease; }
+
+/* ── Paper rows / venue grid / checklists ─────────────────────── */
+.paper { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+.paper:last-child { border-bottom: 0; }
+.paper .t { font-weight: 700; font-size: .95rem; line-height: 1.35; }
+.paper .m { font-size: .8rem; color: var(--ink-soft); margin-top: 2px; }
+.paper .abs { font-size: .84rem; color: var(--ink-soft); margin-top: 6px; max-width: 90ch; }
+.paper .acts { margin-top: 7px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; margin-top: 14px; }
+.vcard { background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 13px; padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.vcard .vn { font-weight: 700; font-size: .9rem; line-height: 1.3; }
+.vcard .vm { font-size: .76rem; color: var(--ink-faint); margin: 4px 0 8px; }
+.check { display: flex; gap: 9px; align-items: flex-start; padding: 7px 0; font-size: .9rem; }
+.check input { margin-top: 4px; accent-color: var(--magenta); }
+.proj-card { display: block; text-decoration: none; cursor: pointer; }
+.proj-card:hover { border-color: var(--violet); }
+.dots { display: flex; gap: 5px; margin-top: 10px; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.dots i.on { background: var(--sc, var(--magenta)); }
+.note-fab {
+  font-size: .78rem; color: var(--ink-soft); background: var(--paper-3);
+  border-left: 3px solid var(--violet); border-radius: 0 9px 9px 0; padding: 9px 13px; margin-top: 14px;
+}
+.del { color: var(--ink-faint); background: none; border: 0; cursor: pointer; font-size: .85rem; }
+.del:hover { color: var(--magenta); }
+.empty { color: var(--ink-faint); font-size: .88rem; padding: 14px 0; }
+.statline { font-family: var(--mono); font-size: .72rem; color: var(--ink-faint); margin-top: 8px; }
+pre.code {
+  font-family: var(--mono); font-size: .76rem; line-height: 1.5; background: var(--paper-3);
+  border: 1px solid var(--line-soft); border-radius: 10px; padding: 12px 14px;
+  overflow-x: auto; margin-top: 10px; white-space: pre;
+}
+
+footer { border-top: 3px solid; border-image: var(--grad) 1; margin-top: 70px; padding: 22px 0 30px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .78rem; color: var(--ink-faint); }
+footer a { color: var(--ink-soft); }
+
+@media (max-width: 640px) {
+  .bar .proj { display: none; }
+  .bar .blink { padding: 6px 6px; }
+  .stage-pill { padding: 6px 10px; font-size: .74rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<nav class="bar">
+  <a class="mark" href="#/" aria-label="Home">{}</a>
+  <a class="name" href="#/" style="color:inherit">Throughline&nbsp;CS</a>
+  <span class="proj">computer-science research, end to end</span>
+  <span class="sp"></span>
+  <a class="blink" href="https://syahmedu.github.io/research-suite/" target="_blank" rel="noopener">Throughline (social science) ↗</a>
+  <a class="blink" href="https://syahmedu.github.io/nexus/" target="_blank" rel="noopener">All projects ↗</a>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀/☾</button>
+</nav>
+
+<main class="wrap" id="view" tabindex="-1"><!-- rendered by app.js --></main>
+
+<footer>
+  <div class="wrap">
+    <span>THROUGHLINE CS — from problem to paper. Literature live from arXiv · Semantic Scholar · DBLP · OpenAlex; statistics computed locally and verified; nothing fabricated.</span>
+    <span>Your data stays in this browser (localStorage). <a href="https://github.com/SyAhmedU/throughline-cs" target="_blank" rel="noopener">Source ↗</a></span>
+  </div>
+</footer>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "throughline-cs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Computer-science research, from problem to paper — one guided workflow. Static, no build.",
+  "scripts": {
+    "test": "node stats.verify.mjs",
+    "test:links": "node _venues.verify.mjs"
+  }
+}
