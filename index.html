@@ -236,6 +236,8 @@ footer .wrap { display: flex; justify-content: space-between; gap: 10px; flex-wr
 footer a { color: var(--ink-soft); }
 
 @media (max-width: 640px) {
+  /* tighten the bar so mark + name + link + toggle fit 390 with room */
+  .bar { gap: 8px; padding: 9px 12px; }
   .bar .proj { display: none; }
   /* the long sibling-product link still forced ~394px min-content — the 4px
      spill locked the mobile layout viewport at 400 */
