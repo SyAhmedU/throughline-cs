@@ -64,6 +64,10 @@ button { font-family: inherit; }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 2; }
 
+/* clip, not hidden — keeps the sticky bar working; stops transient wide
+   elements locking the mobile layout viewport open at first paint */
+html, body { overflow-x: clip; }
+
 /* ── Brand bar (hand-written, standalone project) ─────────────── */
 .bar {
   position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px;
@@ -233,6 +237,9 @@ footer a { color: var(--ink-soft); }
 
 @media (max-width: 640px) {
   .bar .proj { display: none; }
+  /* the long sibling-product link still forced ~394px min-content — the 4px
+     spill locked the mobile layout viewport at 400 */
+  .bar .blink:first-of-type { display: none; }
   .bar .blink { padding: 6px 6px; }
   .stage-pill { padding: 6px 10px; font-size: .74rem; }
 }
