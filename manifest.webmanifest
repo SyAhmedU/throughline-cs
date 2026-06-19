@@ -1,0 +1,18 @@
+{
+  "name": "Throughline CS",
+  "short_name": "Throughline CS",
+  "description": "CS-researcher workflow: discover, frame, design, experiment, analyze, write, publish.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#FBF7EF",
+  "theme_color": "#FBF7EF",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
