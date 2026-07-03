@@ -84,8 +84,14 @@ function route() {
   if (seg === 'p' && pid) {
     const p = getP(pid);
     if (!p) { location.hash = '#/'; return; }
-    renderProject(p, stageById[stage] ? stage : 'discover');
-  } else renderHome();
+    const st = stageById[stage] ? stage : 'discover';
+    // tab title carries project + stage so parallel projects stay tellable-apart
+    document.title = `${p.name.slice(0, 40)}${p.name.length > 40 ? '…' : ''} · ${stageById[st].name} — Throughline CS`;
+    renderProject(p, st);
+  } else {
+    document.title = 'Throughline CS — computer-science research, problem to paper';
+    renderHome();
+  }
   view.scrollIntoView({ block: 'start' });
 }
 addEventListener('hashchange', route);
