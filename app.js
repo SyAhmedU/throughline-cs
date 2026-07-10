@@ -107,6 +107,13 @@ function renderHome() {
       <h1 class="display">Computer-science research,<br>from <em>problem to paper</em>.</h1>
       <p class="lede">Discover what's been done (arXiv · Semantic Scholar · DBLP · OpenAlex, live), frame your contribution, design the experiment matrix, track every run, analyze with real statistics, write with a generated BibTeX, and pick the venue. Each stage hands its work to the next. Everything stays in your browser.</p>
       <div class="note-fab">No fabrication: every paper, venue and dataset here is a real record fetched from a public scholarly API or hand-verified; statistics are computed locally by a <span class="mono">verified</span> open implementation. Nothing is AI-generated.</div>
+      <!-- SYED-CONCEPT · instrument panel: live counts from the code itself -->
+      <div class="statline" style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap">
+        <span><b style="color:var(--ink)">${STAGES.length}</b> stages, one thread</span>
+        <span><b style="color:var(--ink)">${VENUES.length}</b> hand-verified venues</span>
+        <span><b style="color:var(--ink)">4</b> live literature APIs</span>
+        <span>stats <span class="mono">npm test</span>-verified vs textbook values</span>
+      </div>
     </section>
     <section class="card">
       <h2 class="sec">Your projects</h2>
