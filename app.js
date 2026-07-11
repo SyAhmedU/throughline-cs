@@ -127,12 +127,18 @@ function renderHome() {
       <div id="plist">${ps.length ? '' : '<p class="empty">No projects yet — name one above to start the thread, or load the worked example.</p>'}</div>
     </section>
     <section style="margin-top:34px">
-      <div class="kicker">The thread</div>
+      <div class="kicker">The thread — seven panes, one session</div>
+      <!-- SYED-CONCEPT · "The Terminal": stages as tmux panes -->
+      <div class="pane-grid">
       ${STAGES.map((s) => `
-        <div class="card" style="--sc:${s.hue};border-left:3px solid ${s.hue};margin-top:10px;padding:14px 18px">
-          <strong style="font-size:.92rem"><span class="mono" style="color:${s.hue};font-size:.72rem">0${s.n}</span> &nbsp;${s.name}</strong>
-          <span class="hint" style="margin-left:8px">${s.desc}</span>
+        <div class="pane" style="--sc:${s.hue}">
+          <div class="pane-bar">
+            <span class="pd" style="background:#F14575"></span><span class="pd" style="background:#FFB75E"></span><span class="pd" style="background:#34D399"></span>
+            <span class="pane-title">${s.n}/7 · ${s.name.toLowerCase()}</span>
+          </div>
+          <div class="pane-body">${s.desc}</div>
         </div>`).join('')}
+      </div>
     </section>`;
   const plist = $('#plist');
   for (const p of ps) {
