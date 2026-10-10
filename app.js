@@ -118,7 +118,7 @@ function renderHome() {
     <section class="card">
       <h2 class="sec">Your projects</h2>
       <div class="row" style="margin-top:8px">
-        <input type="text" id="np" class="grow" placeholder="Name a new project — e.g. Efficient retrieval for long-context LLMs" maxlength="120">
+        <input type="text" id="np" aria-label="New research project name" class="grow" placeholder="Name a new project — e.g. Efficient retrieval for long-context LLMs" maxlength="120">
         <button class="btn btn-fill" id="npGo">Create project</button>
         <button class="btn btn-ghost btn-sm" id="impBtn" title="Import a project JSON exported from this app">⬆ Import</button>
         <button class="btn btn-ghost btn-sm" id="exBtn" title="A filled-in example project: reading list fetched live from Semantic Scholar (real records); run data simulated and labeled as such">✦ Worked example</button>

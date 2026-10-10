@@ -14,3 +14,8 @@ CS-researcher counterpart to Throughline — 7 stages in one static app (no buil
 A non-destructive **↻ Latest data** panel checks this app's named published reference files and searches current Crossref journal-article metadata. Source/build dates are distinguished from the time of checking; failed checks retain previous successful evidence. Fetched files and metadata can be downloaded. It never clears saved work, resets survey responses, replaces selected scales, regenerates AI text or reloads the current workspace. Curated catalogues, full corpus harvests, publisher policies and current Scopus verification require their separate maintained source workflows. Existing in-memory results remain unchanged.
 
 Canonical source/config: `research-suite/tools/refresh/{research-refresh.js,install.mjs}` in the sibling repository. Run the installer after changes; local script copies are shipped per app. Generated service workers bypass explicit no-store/research_refresh requests.
+
+
+## UI/UX review — 2026-10-10
+
+Named project entry, 16px mobile fields and larger navigation controls; supporting utilities sit below content. Literature and statistics unchanged. Browser and build evidence is recorded in `../output/design-review-2026-10-10/`. This is a heuristic/interaction review, not a complete accessibility certification or user study.
