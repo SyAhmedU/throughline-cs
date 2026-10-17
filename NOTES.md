@@ -27,3 +27,7 @@ Named project entry, 16px mobile fields and larger navigation controls; supporti
 - Desk state lives in `p.advisor` (same `tlcs_projects_v1` storage). "Copy into Frame/Design" pushes problem/RQs/scope and baselines/metrics/ablations into the existing stages. "Export desk (.md)" downloads the plan.
 - Home copy updated: the literature/venues/stats remain non-AI, and the desk is labelled AI draft.
 - Smoke: `_mobile-audit/_tlcs_desk.mjs` (real backend: draft → Reviewer 2 → accept → copy to Frame; 390 px overflow 0). ⚠ The old `_tlcs_smoke.mjs` already failed before this change (it doesn't pass the entry gate; same failure with the change stashed).
+
+## 2026-10-17 — CS river hero
+- `river.js` (`mountRiver`, `RIVER_HTML`, mounted from `renderHome`): streamgraph of OpenAlex works per **Computer Science subfield** (field 17, 11 subfields) per year, 2000 → last full year. One `group_by=primary_topic.subfield.id` call, then one `group_by=publication_year` per subfield, **3 at a time** (12 parallel calls tripped OpenAlex's 10 req/s burst cap), cached 24 h in `localStorage tlcs_river_v1_<year>`.
+- Centred stacking, smoothing, colours and the current lines are layout (stated in "How to read this"). Hover = per-year count, click pins. Fails soft if OpenAlex is unavailable. Reduced motion → "▶ Let it flow" (`syed_flow`). Smoke `_mobile-audit/_csriver.mjs <out> [baseUrl]`.

@@ -10,6 +10,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0,0;1,9..144,400..600,0,1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* The CS river (home hero), live OpenAlex subfield counts */
+.river{margin:22px 0 0;background:var(--paper-2);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.rv-svg{line-height:0;min-height:120px;padding-top:8px}.rv-svg svg{display:block;width:100%;height:auto}
+.rv-wait{line-height:1.5;padding:60px 18px;color:var(--ink-faint);font-size:13px;text-align:center}
+.river figcaption{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 18px 13px;border-top:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-faint);line-height:1.55}
+.rv-read{flex:1 1 100%;font-size:13.5px;color:var(--ink-soft);min-height:1.6em}.rv-read b{color:var(--ink)}.rv-read a{color:var(--violet)}
+.rv-how{flex:1}.rv-how summary{cursor:pointer;font-weight:600;color:var(--ink-soft)}.rv-how span{display:block;margin-top:6px}
+.chip-btn{font:600 12px var(--sans);padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--paper-3);color:var(--ink-soft);cursor:pointer}
+.rv-yr{font:10px var(--mono);fill:var(--ink-faint)}.rv-lab{font:600 11px var(--sans);fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.18);stroke-width:2px}
+.rv-key{display:flex;flex-wrap:wrap;gap:3px 12px;flex:1 1 100%}.rv-key i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}.rv-hair{stroke:var(--ink);stroke-opacity:.35;stroke-dasharray:2 3}
+.stream{cursor:pointer;transition:opacity .3s}.stream:focus{outline:none}.stream>path:first-child{fill-opacity:.82;stroke:var(--paper-2);stroke-width:.6}
+.rv-svg.hl .stream{opacity:.28}.rv-svg.hl .stream.on{opacity:1}
+.stream .cur{fill:none;stroke:#fff;stroke-opacity:.0;stroke-width:1.2;stroke-dasharray:10 70;stroke-linecap:round;pointer-events:none}
+.river[data-play="1"] .stream .cur{stroke-opacity:.38;animation:rvFlow var(--d,30s) linear infinite}
+@keyframes rvFlow{to{stroke-dashoffset:-800}}
 /* ════════════════════════════════════════════════════════════════
    THROUGHLINE CS — computer-science research, end to end.
    Static, no build. Syed Fire tokens + syed-bose link grammar.

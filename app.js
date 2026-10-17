@@ -7,6 +7,7 @@
 import { VENUES, AREAS, DEADLINE_LINKS, dblpUrl } from './venues.js';
 import * as S from './stats.js';
 import { renderAdvisor, DESK } from './advisor.js';
+import { mountRiver, RIVER_HTML } from './river.js';
 
 // ── tiny helpers ──────────────────────────────────────────────────
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -116,6 +117,7 @@ function renderHome() {
         <span><b style="color:var(--ink)">8</b>-stage area-chair-audited desk</span>
         <span>stats <span class="mono">npm test</span>-verified vs textbook values</span>
       </div>
+      ${RIVER_HTML}
     </section>
     <section class="card">
       <h2 class="sec">Your projects</h2>
@@ -142,6 +144,7 @@ function renderHome() {
         </div>`).join('')}
       </div>
     </section>`;
+  mountRiver($('#csRiver'));
   const plist = $('#plist');
   for (const p of ps) {
     const card = document.createElement('div');
