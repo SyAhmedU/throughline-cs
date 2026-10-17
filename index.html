@@ -256,7 +256,9 @@ footer a { color: var(--ink-soft); }
   .bar .proj { display: none; }
   /* the long sibling-product link still forced ~394px min-content — the 4px
      spill locked the mobile layout viewport at 400 */
-  .bar .blink:first-of-type { display: none; }
+  .bar .blink[href*="research-suite"] { display: none; } /* was :first-of-type, which never matched (the mark is the first <a>) */
+  .bar .blink, .bar .name { white-space: nowrap; }
+  .bar .theme-toggle { flex: none; }
   .bar .blink { padding: 6px 6px; }
   .stage-pill { padding: 6px 10px; font-size: .74rem; }
 }
