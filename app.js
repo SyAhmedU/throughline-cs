@@ -6,6 +6,7 @@
 // ════════════════════════════════════════════════════════════════
 import { VENUES, AREAS, DEADLINE_LINKS, dblpUrl } from './venues.js';
 import * as S from './stats.js';
+import { renderAdvisor, DESK } from './advisor.js';
 
 // ── tiny helpers ──────────────────────────────────────────────────
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -84,9 +85,9 @@ function route() {
   if (seg === 'p' && pid) {
     const p = getP(pid);
     if (!p) { location.hash = '#/'; return; }
-    const st = stageById[stage] ? stage : 'discover';
+    const st = stageById[stage] || stage === 'desk' ? stage : 'discover';
     // tab title carries project + stage so parallel projects stay tellable-apart
-    document.title = `${p.name.slice(0, 40)}${p.name.length > 40 ? '…' : ''} · ${stageById[st].name} — Throughline CS`;
+    document.title = `${p.name.slice(0, 40)}${p.name.length > 40 ? '…' : ''} · ${st === 'desk' ? 'Top-venue desk' : stageById[st].name} — Throughline CS`;
     renderProject(p, st);
   } else {
     document.title = 'Throughline CS — computer-science research, problem to paper';
@@ -103,15 +104,16 @@ function renderHome() {
   const ps = loadAll().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   view.innerHTML = `
     <section style="padding:54px 0 10px">
-      <div class="kicker">One workflow · seven stages · live literature</div>
+      <div class="kicker">One workflow · seven stages · a top-venue desk · live literature</div>
       <h1 class="display">Computer-science research,<br>from <em>problem to paper</em>.</h1>
       <p class="lede">Discover what's been done (arXiv · Semantic Scholar · DBLP · OpenAlex, live), frame your contribution, design the experiment matrix, track every run, analyze with real statistics, write with a generated BibTeX, and pick the venue. Each stage hands its work to the next. Everything stays in your browser.</p>
-      <div class="note-fab">No fabrication: every paper, venue and dataset here is a real record fetched from a public scholarly API or hand-verified; statistics are computed locally by a <span class="mono">verified</span> open implementation. Nothing is AI-generated.</div>
+      <div class="note-fab">No fabrication: every paper, venue and dataset here is a real record fetched from a public scholarly API or hand-verified; statistics are computed locally by a <span class="mono">verified</span> open implementation. None of that is AI-generated. The optional <b>★ Top-venue desk</b> drafts a paper plan with AI (free, via the suite backend). It is labelled as a draft, scored by an area-chair rubric, grounded in live arXiv records whose ids are verified, and limited to the verified venue list.</div>
       <!-- SYED-CONCEPT · instrument panel: live counts from the code itself -->
       <div class="statline" style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap">
         <span><b style="color:var(--ink)">${STAGES.length}</b> stages, one thread</span>
         <span><b style="color:var(--ink)">${VENUES.length}</b> hand-verified venues</span>
         <span><b style="color:var(--ink)">4</b> live literature APIs</span>
+        <span><b style="color:var(--ink)">8</b>-stage area-chair-audited desk</span>
         <span>stats <span class="mono">npm test</span>-verified vs textbook values</span>
       </div>
     </section>
@@ -227,7 +229,7 @@ function renderHome() {
 // PROJECT SHELL
 // ══════════════════════════════════════════════════════════════════
 function renderProject(p, stageId) {
-  const st = stageById[stageId];
+  const st = stageId === 'desk' ? { hue: '#F14575', desc: 'An area-chair-audited paper plan: eight stages drafted by the free suite advisor, grounded in live arXiv, each open to a NeurIPS-style Reviewer 2. Copy results into Frame and Design.' } : stageById[stageId];
   view.innerHTML = `
     <section style="padding:30px 0 0">
       <div class="row" style="justify-content:space-between">
@@ -240,12 +242,14 @@ function renderProject(p, stageId) {
       <nav class="stage-nav">${STAGES.map((s) => `
         <a class="stage-pill ${s.id === stageId ? 'active' : ''} ${stageDone(p, s.id) ? 'done' : ''}" style="--sc:${s.hue}" href="#/p/${p.id}/${s.id}">
           <span class="n">${s.n}</span>${s.name}</a>`).join('')}
+        <a class="stage-pill desk-pill ${stageId === 'desk' ? 'active' : ''} ${p.advisor && Object.keys(p.advisor.stages || {}).length ? 'done' : ''}" style="--sc:#F14575" href="#/p/${p.id}/desk"><span class="n">★</span>Top-venue desk</a>
       </nav>
       <div class="spine"><i style="--fill:${Math.round(progress(p) * 100)}%"></i></div>
       <p class="hint" style="margin-bottom:6px">${st.desc}</p>
     </section>
     <section id="stage"></section>`;
   const mount = $('#stage');
+  if (stageId === 'desk') return renderAdvisor(mount, p, saveP);
   ({ discover: rDiscover, frame: rFrame, design: rDesign, experiment: rExperiment, analyze: rAnalyze, write: rWrite, publish: rPublish })[stageId](mount, p);
 }
 

@@ -248,6 +248,40 @@ footer a { color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ── top-venue desk (advisor.js) ── */
+.desk-pill{border-style:dashed}
+.adv-intro{display:flex;gap:18px;justify-content:space-between;align-items:stretch;flex-wrap:wrap;margin:14px 0 16px;padding:18px 20px;border-radius:18px;background:linear-gradient(var(--paper-2),var(--paper-2)) padding-box,var(--grad) border-box;border:1px solid transparent;box-shadow:var(--shadow-sm)}
+.adv-intro>div:first-child{flex:1 1 420px}.adv-intro p{margin:6px 0 0;color:var(--ink-soft);font-size:.92rem;line-height:1.55}
+.adv-overall{display:flex;flex-direction:column;justify-content:center;min-width:170px;padding-left:18px;border-left:1px solid var(--line)}.adv-overall b{font:600 2.4rem/1 var(--serif)}.adv-overall span{font-size:.78rem;color:var(--ink-faint)}
+.adv-kicker{font:600 .7rem var(--mono);letter-spacing:.12em;color:var(--magenta)}
+.adv-desk{display:grid;grid-template-columns:200px minmax(0,1fr) 300px;gap:18px;align-items:start}
+.adv-rail{position:sticky;top:76px;display:flex;flex-direction:column;gap:4px}
+.adv-rail button{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;border:1px solid transparent;background:none;color:var(--ink-soft);text-align:left;cursor:pointer;font:500 .88rem var(--sans)}
+.adv-rail button:hover{background:var(--paper-3)}.adv-rail button.on{background:var(--paper-2);border-color:var(--line);color:var(--ink);box-shadow:var(--shadow-sm)}
+.adv-n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--paper-3);font:600 .72rem var(--mono)}.adv-rail button.on .adv-n{background:var(--grad);color:#fff}
+.adv-nm{flex:1}.adv-dot{font:600 .72rem var(--mono);padding:2px 6px;border-radius:6px;background:var(--paper-3)}
+.adv-main{background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:22px 24px;box-shadow:var(--shadow-sm);min-width:0}
+.adv-h{font:600 1.7rem/1.15 var(--serif);margin:4px 0 2px}.adv-q{color:var(--ink-soft);margin:0 0 12px}
+.adv-lab{display:block;font-size:.8rem;font-weight:600;margin:10px 0 4px;color:var(--ink-soft)}
+.adv-main textarea,.adv-main input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.adv-status{min-height:1.2em;color:var(--magenta);font-size:.86rem;margin:4px 0}
+.adv-doc{margin-top:12px;font-size:.93rem;line-height:1.6}
+.adv-kv{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--line-soft)}.adv-kv>span:first-child{font-weight:600;color:var(--ink-soft);font-size:.82rem}
+.adv-items{display:flex;flex-direction:column;gap:8px}.adv-item{padding:10px 12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--paper)}.adv-item .adv-kv{grid-template-columns:120px minmax(0,1fr)}
+.adv-ul{margin:0;padding-left:18px}.adv-ul li{margin:3px 0}
+.adv-muted{color:var(--ink-faint);font-size:.85rem}.adv-ok{color:#1a9e70;font-size:.78rem;font-weight:600}.adv-warn{color:#c4621f;font-size:.78rem;font-weight:600}
+.adv-aside{position:sticky;top:76px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow-sm);font-size:.86rem}
+.adv-aside h4{margin:14px 0 6px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint)}
+.adv-mean{display:flex;align-items:baseline;gap:8px;margin:8px 0 10px}.adv-mean b{font:600 2.2rem/1 var(--serif)}.adv-mean span{color:var(--ink-faint)}
+.adv-score{margin:8px 0}.adv-score-h{display:flex;justify-content:space-between;gap:8px;font-weight:600}.adv-score p{margin:4px 0 0;color:var(--ink-soft);font-size:.8rem}
+.adv-bar{height:6px;border-radius:6px;background:var(--paper-3);overflow:hidden;margin-top:4px}.adv-bar i{display:block;height:100%;background:var(--grad)}
+.adv-review{margin:12px 0;padding:14px 16px;border-radius:14px;border:1px solid var(--magenta);background:var(--paper)}
+.adv-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.adv-chips span{font-size:.78rem;padding:4px 8px;border-radius:8px;background:var(--paper-3)}
+.adv-sev{font:600 .7rem var(--mono);text-transform:uppercase;padding:2px 6px;border-radius:6px;background:var(--paper-3)}.adv-sev.maj{background:var(--magenta);color:#fff}
+.adv-src{margin-top:14px;font-size:.85rem}.adv-src summary{cursor:pointer;font-weight:600}
+@media(max-width:1100px){.adv-desk{grid-template-columns:180px minmax(0,1fr)}.adv-aside{grid-column:1/-1;position:static}}
+@media(max-width:720px){.adv-desk{grid-template-columns:minmax(0,1fr)}.adv-rail{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px}.adv-rail button{flex:none}.adv-nm{white-space:nowrap}.adv-kv,.adv-item .adv-kv{grid-template-columns:minmax(0,1fr);gap:2px}.adv-main{padding:16px}.adv-overall{border-left:0;padding-left:0}}
 </style>
 <meta name="theme-color" content="#FBF7EF">
 <!-- SYED-GATE · entry password, re-locks every load · injected by research-suite/tools/gate/inject.mjs -->

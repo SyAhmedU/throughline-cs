@@ -19,3 +19,11 @@ Canonical source/config: `research-suite/tools/refresh/{research-refresh.js,inst
 ## UI/UX review — 2026-10-10
 
 Named project entry, 16px mobile fields and larger navigation controls; supporting utilities sit below content. Literature and statistics unchanged. Browser and build evidence is recorded in `../output/design-review-2026-10-10/`. This is a heuristic/interaction review, not a complete accessibility certification or user study.
+
+## 2026-10-17 — ★ Top-venue desk (ResearchFlow-depth workflow)
+- New route `#/p/<id>/desk` (pill after Publish), in `advisor.js`. It has 8 stages: Problem → Related work → Contributions → Method → Experiments → Threats & limits → Reproducibility → Paper & venue.
+- Each stage is drafted by the shared suite backend, `researchflow/api` **`/api/cs/stage`** (Groq gpt-oss, free; prompts in `researchflow/api/_cs_prompts.py`), and scored against an area-chair rubric (editorAudit, a 1–5 calibration to top-venue acceptance). **`/api/cs/review`** gives a NeurIPS-style Reviewer 2 (soundness/presentation/contribution 1–4, overall 1–10, confidence) plus a revised section you can accept.
+- Grounding: related work gets live arXiv API records (last 3 years); any arXiv id not in those results is badged ⚠ verify. Paper & venue may only choose from `venues.js` (fetched server-side from Pages) and each pick is badged `inVenueList`.
+- Desk state lives in `p.advisor` (same `tlcs_projects_v1` storage). "Copy into Frame/Design" pushes problem/RQs/scope and baselines/metrics/ablations into the existing stages. "Export desk (.md)" downloads the plan.
+- Home copy updated: the literature/venues/stats remain non-AI, and the desk is labelled AI draft.
+- Smoke: `_mobile-audit/_tlcs_desk.mjs` (real backend: draft → Reviewer 2 → accept → copy to Frame; 390 px overflow 0). ⚠ The old `_tlcs_smoke.mjs` already failed before this change (it doesn't pass the entry gate; same failure with the change stashed).
