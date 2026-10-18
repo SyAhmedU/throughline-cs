@@ -31,3 +31,8 @@ Named project entry, 16px mobile fields and larger navigation controls; supporti
 ## 2026-10-17 — CS river hero
 - `river.js` (`mountRiver`, `RIVER_HTML`, mounted from `renderHome`): streamgraph of OpenAlex works per **Computer Science subfield** (field 17, 11 subfields) per year, 2000 → last full year. One `group_by=primary_topic.subfield.id` call, then one `group_by=publication_year` per subfield, **3 at a time** (12 parallel calls tripped OpenAlex's 10 req/s burst cap), cached 24 h in `localStorage tlcs_river_v1_<year>`.
 - Centred stacking, smoothing, colours and the current lines are layout (stated in "How to read this"). Hover = per-year count, click pins. Fails soft if OpenAlex is unavailable. Reduced motion → "▶ Let it flow" (`syed_flow`). Smoke `_mobile-audit/_csriver.mjs <out> [baseUrl]`.
+
+
+## 18 October 2026 — shared research account
+
+The canonical research-suite/tools/gate/install.mjs account gate replaces the per-site password. Login uses the research home Google session and server-verified invited/approved membership. Content is unchanged.
