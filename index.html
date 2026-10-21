@@ -340,7 +340,7 @@ footer a { color: var(--ink-soft); }
   // Published Cadence participant links are deliberately outside researcher login.
   if(location.pathname.indexOf('/cadence')===0&&location.hash){try{var c=JSON.parse(atob(location.hash.slice(1)));if(c.id&&c.name)return;}catch(e){}}
   document.documentElement.classList.add('lrl-locked');
-  function load(){var el=document.createElement('div');el.id='lrl-gate';el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#f5f4ef;color:#172820;display:grid;place-items:center;padding:24px;font:16px/1.6 system-ui';el.innerHTML='<div><h1 style="font:400 32px Georgia">Lazy Research Lad</h1><p>Connecting your research account…</p><a href="https://syahmedu.github.io/research-suite/access.html">Open Google sign-in and access requests</a></div>';document.body.appendChild(el);import('https://syahmedu.github.io/research-suite/pack-session.js?v=20261020a').catch(function(){el.querySelector('p').textContent='Could not connect. Check your connection, then reload or open account access.';});}
+  function load(){var el=document.createElement('div');el.id='lrl-gate';el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#f5f4ef;color:#172820;display:grid;place-items:center;padding:24px;font:16px/1.6 system-ui';el.innerHTML='<div><h1 style="font:400 32px Georgia">Lazy Research Lad</h1><p>Connecting your research account…</p><a href="https://lazyresearchlad.vercel.app/access.html">Open Google sign-in and access requests</a></div>';document.body.appendChild(el);import('https://lazyresearchlad.vercel.app/pack-session.js?v=20261020a').catch(function(){el.querySelector('p').textContent='Could not connect. Check your connection, then reload or open account access.';});}
   if(document.body)load();else document.addEventListener('DOMContentLoaded',load,{once:true});
 })();</script>
 <!-- /LRL-ACCOUNT-GATE -->
@@ -353,7 +353,7 @@ footer a { color: var(--ink-soft); }
   <a class="name" href="#/" style="color:inherit">Throughline&nbsp;CS</a>
   <span class="proj">computer-science research, end to end</span>
   <span class="sp"></span>
-  <a class="blink" href="https://syahmedu.github.io/research-suite/" target="_blank" rel="noopener">Throughline (social science) ↗</a>
+  <a class="blink" href="https://lazyresearchlad.vercel.app/" target="_blank" rel="noopener">Throughline (social science) ↗</a>
   <a class="blink" href="https://syahmedu.github.io/nexus/" target="_blank" rel="noopener">All projects ↗</a>
   <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀/☾</button>
 </nav>

@@ -1,7 +1,7 @@
 # Throughline CS
 
 **Computer-science research, from problem to paper — one guided workflow.**
-Sibling to [Throughline](https://syahmedu.github.io/research-suite/) (the social-science suite), rebuilt around how CS research actually runs.
+Sibling to [Throughline](https://lazyresearchlad.vercel.app/) (the social-science suite), rebuilt around how CS research actually runs.
 
 Live: https://syahmedu.github.io/throughline-cs/
 
